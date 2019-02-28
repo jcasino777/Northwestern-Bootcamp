@@ -1,0 +1,178 @@
+Sub GenerateTickers()
+
+    'loops through each workbook, filtering for unique values in column "A", and pasting in column "I"
+    For i = 1 To ActiveWorkbook.Sheets.Count
+        Sheets(i).Range("A:A").AdvancedFilter Action:=xlFilterCopy, CopyToRange:=Sheets(i).Range("I1"), Unique:=True
+    Next i
+
+End Sub
+
+
+Sub Calculate()
+    
+    'declare variables
+    Dim Op As Double
+    Dim Cl As Double
+    Dim Vol As Double
+    Dim tick As String
+    Dim StartDate As Double
+    Dim EndDate As Double
+    Dim RowLength As Double
+    Dim TickerLength As Double
+    
+    'Originally tried to Loop Through, took very long. Trying sumifs formula instead
+    'For i = 1 To TickerLength
+        'tick = Cells(i, 9).Value
+        'For j = 1 To RowLength
+            'If (Cells(j, 1).Value = tick) And (Cells(j, 2).Value = StartDate) Then
+             '   Cells(i, 10).Value = Cells(j, 3)
+            'ElseIf (Cells(i, 1).Value = tick) And (Cells(i, 2).Value = EndDate) Then
+             '   Cells(i, 10).Value = Cells(j, 6)
+            'End If
+        'Next j
+    'Next i
+    
+  'loop through all sheets
+  For i = 1 To ActiveWorkbook.Sheets.Count
+        Worksheets(i).Select
+        
+        'set number of tickers to loop through
+        TickerLength = Cells(Rows.Count, "I").End(xlUp).Row
+        
+        'set start date and end date for each sheet
+        StartDate = Application.Min(Range("B:B"))
+        EndDate = Application.Max(Range("B:B"))
+        
+        'column headers
+        Range("J1").Value = StartDate
+        Range("K1").Value = EndDate
+        Range("L1").Value = "Volume"
+        Range("M1").Value = "Net Change"
+        Range("N1").Value = "% Change"
+    
+        'loop through tickers filling in open at beginning of year, close at end of year, and cumulative volume
+        For j = 2 To TickerLength
+            Op = Application.WorksheetFunction.SumIfs(Range("C:C"), Range("A:A"), Cells(j, "I").Value, Range("B:B"), StartDate)
+            Cl = Application.WorksheetFunction.SumIfs(Range("F:F"), Range("A:A"), Cells(j, "I").Value, Range("B:B"), EndDate)
+            Vol = Application.WorksheetFunction.SumIfs(Range("G:G"), Range("A:A"), Cells(j, "I").Value)
+            
+            Cells(j, "J").Value = Op
+            Cells(j, "K").Value = Cl
+            Cells(j, "L").Value = Vol
+            
+            'exclude stocks that started/stopped trading midyr
+            If (Op <> 0) And (Cl <> 0) Then
+                Cells(j, "M").Value = Cl - Op
+                Cells(j, "N").Value = (Cl - Op) / Op
+                Cells(j, "N").NumberFormat = "0.00%"
+            End If
+           
+        Next j
+    Next i
+    
+End Sub
+
+Sub FormatCells()
+
+    'loop through worksheets
+    For i = 1 To ActiveWorkbook.Sheets.Count
+        Worksheets(i).Select
+        
+        'set number of tickers to loop through
+        TickerLength = Cells(Rows.Count, "I").End(xlUp).Row
+        
+        'fill in green if positive over period, red if negative
+        For j = 2 To TickerLength
+            If Cells(j, "M").Value >= 0 Then
+                Cells(j, "M").Interior.ColorIndex = 4
+            Else
+                Cells(j, "M").Interior.ColorIndex = 3
+            End If
+        Next j
+    Next i
+    
+End Sub
+
+Sub SummarizeStats()
+
+    Dim increase As Double
+    Dim decrease As Double
+    Dim volume As Double
+    Dim increaseticker As String
+    Dim decreaseticker As String
+    Dim volumeticker As String
+    
+    'loop through sheets
+    For i = 1 To ActiveWorkbook.Sheets.Count
+        
+        Worksheets(i).Select
+        
+        TickerLength = Cells(Rows.Count, "I").End(xlUp).Row
+        increase = 0
+        decrease = 0
+        volume = 0
+        increaseticker = ""
+        decreaseticker = ""
+        volumeticker = ""
+        
+        'loop through all tickers, identifying biggest increase, decrease, and volume
+        For j = 2 To TickerLength
+           
+            'volume = Application.WorksheetFunction.Max(Range("L:l"))
+            'increase = Application.WorksheetFunction.Max(Range("N:N"))
+            'decrease = Application.WorksheetFunction.Min(Range("N:N"))
+            
+            If Cells(j, "L").Value > volume Then
+                volume = Cells(j, "L").Value
+                volumeticker = Cells(j, "I")
+            ElseIf Cells(j, "N").Value > increase Then
+                increase = Cells(j, "N").Value
+                increaseticker = Cells(j, "I")
+            ElseIf Cells(j, "N").Value < decrease Then
+                decrease = Cells(j, "N").Value
+                decreaseticker = Cells(j, "I").Value
+            End If
+            
+        Next j
+        
+        'fill in cells with labels / data
+        Range("Q1") = "Ticker"
+        Range("R1") = "Value"
+        Range("P2") = "Greatest % Increase"
+        Range("P3") = "Greatest % Decrease"
+        Range("P4") = "Greatest Total Volume"
+        Range("R2") = increase
+        Range("R3") = decrease
+        Range("R4") = volume
+        Range("Q2") = increaseticker
+        Range("Q3") = decreaseticker
+        Range("Q4") = volumeticker
+        
+        Range("R2:R3").NumberFormat = "0.00%"
+    
+    Next i
+
+End Sub
+
+
+Sub clear()
+'
+' clears worksheets
+'
+    For i = 1 To ActiveWorkbook.Sheets.Count
+        
+        Worksheets(i).Select
+        
+        Range("I1").Select
+        Range(Selection, Selection.End(xlToRight)).Select
+        Range(Selection, Selection.End(xlDown)).Select
+        Selection.ClearContents
+        Selection.ClearFormats
+        Range("P1:R4").Select
+        Selection.ClearContents
+        Selection.ClearFormats
+        
+    Next i
+    
+    
+End Sub
