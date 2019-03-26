@@ -3,7 +3,7 @@ import os
 import pandas as pd
 
 #call direct filepath
-path = '/Users/jcasino/Documents/Courses/NUCHI201902DATA3/02-Homework/03-Python/Instructions/PyBank/Resources/budget_data.csv'
+path = 'budget_data.csv'
 
 #read in file as csv, setting Date as Index
 budgetdata = pd.read_csv(path,index_col="Date")

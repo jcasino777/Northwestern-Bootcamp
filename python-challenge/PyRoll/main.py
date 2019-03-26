@@ -1,7 +1,7 @@
 import pandas as pd
 
 #import data from direct path, read into dataframe
-path = '/Users/jcasino/Documents/Courses/NUCHI201902DATA3/02-Homework/03-Python/Instructions/PyPoll/Resources/election_data.csv'
+path = 'election_data.csv'
 electiondata = pd.read_csv(path)
 
 #get total number of votes
